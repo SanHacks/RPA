@@ -1,43 +1,4 @@
 """Web Scraping Task."""
-# INSTRUCTIONS
-# You must have 3 configured variables (you can save them in the configuration file, but it is better to put them to the Robocorp Cloud work items):
-
-# - search phrase
-# - news category or section
-# - number of months for which you need to receive news
-
-#     > Example of how this should work: 0 or 1 - only the current month, 2 - current and previous month, 3 - current and two previous months, and so on
-#     >
-
-# The main steps:
-
-# 1. Open the site by following the link
-# 2. Enter a phrase in the search field
-# 3. On the result page, apply the following filters:
-#     - select a news category or section
-#     - choose the latest news
-# 4. Get the values: title, date, and description.
-# 5. Store in an excel file:
-#     - title
-#     - date
-#     - description (if available)
-#     - picture filename
-#     - count of search phrases in the title and description
-#     - True or False, depending on whether the title or description contains any amount of money
-
-#         > Possible formats: $11.1 | $111,111.11 | 11 dollars | 11 USD
-#         >
-# 6. Download the news picture and specify the file name in the excel file
-# 7. Follow the steps 4-6 for all news that fall within the required time period
-
-# Specifically, we will be looking for the following in your submission:
-
-# 1. Quality code
-# Your code is clean, maintainable, and well-architected. The use of an object-oriented model is preferred.
-# 2. Resiliency
-# Your architecture is fault-tolerant and can handle failures both at the application level and website level.
-# 3. Best practices
-# Your implementation follows best RPA practices.
 import os
 
 from selenium import webdriver
@@ -51,6 +12,7 @@ from RPA.Excel.Files import Files
 from RPA.HTTP import HTTP
 from RPA.PDF import PDF
 import csv
+import re
 
 browser = webdriver.Chrome(
     # ChromeDriver executable path (download from https://chromedriver.chromium.org/downloads)
@@ -58,6 +20,8 @@ browser = webdriver.Chrome(
     # windows in download folder
     # executable_path="C:\\Users\\gundo\\Downloads\\chromedriver.exe"
 )
+
+searchTerm = "South Africa"
 
 
 def openNewYorkTimes():
@@ -112,27 +76,27 @@ def searchFilterSection():
         print("Filtering done")
 
 
-def getNews():
-    # Set the regular expression to match the date label
-    date_regex = r"^[A-Z][a-z]{2}\. \d{1,2}$"
+# def getNews():
+#     # Set the regular expression to match the date label
+#     date_regex = r"^[A-Z][a-z]{2}\. \d{1,2}$"
 
-    # Find all the span elements with an aria-label attribute
-    all_spans = browser.find_elements(By.XPATH, "//span[@aria-label]")
+#     # Find all the span elements with an aria-label attribute
+#     all_spans = browser.find_elements(By.XPATH, "//span[@aria-label]")
 
-    # Loop through the span elements and find the one with the matching label   search-results
-    date_element = None
-    for span in all_spans:
-        label = span.get_attribute("aria-label")
-        if re.match(date_regex, label):
-            date_element = span
-            break
+#     # Loop through the span elements and find the one with the matching label   search-results
+#     date_element = None
+#     for span in all_spans:
+#         label = span.get_attribute("aria-label")
+#         if re.match(date_regex, label):
+#             date_element = span
+#             break
 
-    # Get the text of the element
-    if date_element is not None:
-        date = date_element.text
-        print(date)  # Output: Feb. 22
-    else:
-        print("No matching date found")
+#     # Get the text of the element
+#     if date_element is not None:
+#         date = date_element.text
+#         print(date)  # Output: Feb. 22
+#     else:
+#         print("No matching date found")
 
 
 def paparazzi():
@@ -162,57 +126,132 @@ def numberOfNewsResult():
         print("Done")
 
 
+def initCSV():
+    try:
+        if not os.path.isfile('news.csv'):
+            with open('news.csv', 'w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow(["Title", "Date", "Description",
+                                "Picture filename", "Phrase count", "Money"])
+                print("CSV file created")
+        else:
+            print("CSV file already exists")
+    except:
+        print("Error in creating CSV file")
+        # Create a new Excel file
+
+
+# def initExcel():
+#     try:
+#         if not os.path.isfile('news.xlsx'):
+#             excel = Files()
+#             excel.create_workbook("news.xlsx")
+#             excel.create_worksheet("Sheet1")
+#             excel.save_workbook()
+#             excel.close_workbook()
+#             print("Excel file created")
+#         else:
+#             print("Excel file already exists")
+#     except:
+#         print("Error in creating Excel file")
+
+
+def storeToExcel(title, description):
+    try:
+        result = []
+        result.append(title)
+        result.append("date")
+        result.append(description)
+        result.append("picture")
+        result.append(countNumberOfOccurence(title, description, searchTerm))
+        result.append(has_money("description"))
+
+        with open('news.csv', 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(result)
+            print("Stored to CSV")
+    except:
+        print("Error in storing to CSV")
+
+
 def getNews():
     try:
-        # Find the search results container
-        results_container = browser.find_element(By.XPATH,
-                                                 value="//ol[@data-testid='search-results']")
+        # Find the li element by its test ID
+        search_results = browser.find_element(
+            By.XPATH, '//ol[@data-testid="search-results"]')
 
-        # Find all the search result items
-        results_items = results_container.find_elements(By.XPATH,
-                                                        value=".//li[@data-testid='search-bodega-result']")
+        # Loop over each list element in the ol
+        for result in search_results.find_elements(By.XPATH, './li[@data-testid="search-bodega-result"]'):
+            # Extract the title and description from the a element
+            title = result.find_element(By.XPATH, './div//a/h4').text
+            description = result.find_element(By.XPATH, './div//a/p[1]').text
+            # date = result.find_element(By.XPATH, './div//a/p[2]').text
 
-        # Loop through each search result item
-        for result_item in results_items:
-            # Extract the title
-            title_element = result_item.find_element(By.XPATH, value=".//h4")
-            title = title_element.text
+            print(title, "Title")
+            print(description, "Description")
+            # print(date, "Date")
 
-            # Extract the date
-            date_element = result_item.find_element(By.XPATH,
-                                                    value=".//span[@data-testid='todays-date']")
-            date = date_element.text
+            try:
+                storeToExcel(title, description)
+            except:
+                print("Error Trying to store to excel")
 
-            # Extract the description
-            description_element = result_item.find_element(
-                by="xpath", value=".//p")
-            description = description_element.text
-
-            # Check if the description is long enough to be the article description
-            if len(description) > 50:
-                # Check if the description contains a currency symbol
-                if '$' in description:
-                    print("Article title:", title)
-                    print("Article date:", date)
-                    print("Article description:", description)
-                    print("Article contains currency symbol")
-                else:
-                    print("Article title:", title)
-                    print("Article date:", date)
-                    print("Article description:", description)
-                    print("Article does not contain currency symbol")
     except NoSuchElementException:
         print("No search results element found")
 
+    finally:
+        print("Done")
+        return
+
+
+def countNumberOfOccurence(title, description, phrase):
+    # combine the title and description into one string
+    text = title + " " + description
+
+    # use the count method to count how many times the phrase appears
+    count = text.count(phrase)
+
+    return count
+
+
+def has_money(text):
+    """
+    Checks if the given text contains any amount of money.
+
+    Possible formats: $11.1 | $111,111.11 | 11 dollars | 11 USD
+
+    Returns:
+    - True if the text contains any amount of money.
+    - False otherwise.
+    """
+    # Check if the text contains a dollar sign followed by a number with optional decimal points and commas.
+    if re.search(r'\$\d{1,3}(,\d{3})*(\.\d+)?', text):
+        return True
+
+    # Check if the text contains a number followed by the word 'dollars'.
+    if re.search(r'\d+ dollars?', text):
+        return True
+
+    # Check if the text contains a number followed by 'USD'.
+    if re.search(r'\d+ USD', text):
+        return True
+
+    return False
+# NY Times Crawler
+
 
 def nyCrawler():
+    # initExcel()
+    initCSV()
     openNewYorkTimes()
     paparazzi()
-    searchNews("Nasa")
-    searchFilterTime()
+    searchNews(searchTerm)
     searchFilterSection()
-    # getNews()
+    searchFilterTime()
+    getNews()
     numberOfNewsResult()
+
+    browser.quit()
 
 
 if __name__ == "__main__":
