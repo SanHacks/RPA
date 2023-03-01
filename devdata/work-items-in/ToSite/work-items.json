@@ -1,0 +1,12 @@
+[
+  {
+    "payload": {
+      "toDomain": "https://www.nytimes.com/search",
+      "searchterm": "Technology",
+      "news": "news.csv"
+    },
+    "files": {
+      "news.csv": "news.csv"
+    }
+  }
+]

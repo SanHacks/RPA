@@ -14,6 +14,9 @@ from RPA.PDF import PDF
 import csv
 import re
 import urllib.request
+import logging
+from RPA.Robocorp.WorkItems import WorkItems
+
 browser = webdriver.Chrome(
     # ChromeDriver executable in Mac (download from https://chromedriver.chromium.org/downloads)
     executable_path="/Users/mac/Downloads/chromedriver"
@@ -22,13 +25,23 @@ browser = webdriver.Chrome(
 )
 
 # Search
-searchTerm = "African"
+searchTerm = "World"
+
+
+def list_variables(item_id):
+    library = WorkItems()
+    library.get_input_work_item()
+    variables = library.get_work_item_variable()
+    for variable, value in variables.items():
+        logging.info("%s = %s", variable, value)
+        print(value)
+        return value
 
 
 def openNewYorkTimes():
     '''Open the New York Times website.'''
     try:
-        browser.get("https://www.nytimes.com/search")
+        browser.get(list_variables(2))  # usage of workitem
         print("Page loaded")
         # browser.find_element(By.XPATH, value="//button[normalize-space()='Accept All']").click() //In case of cookies
     except selenium.common.exceptions.TimeoutException:
@@ -266,7 +279,7 @@ def has_money(text):
 
 
 def nyCrawler():
-    ''' Main Runner '''
+    ''' Main Runner Use work-item to get the search term from the user. '''
     # initExcel()
     initCSV()
     openNewYorkTimes()
