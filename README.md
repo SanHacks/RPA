@@ -34,4 +34,8 @@ As part of my Robot Framework Implementations You May Please Check Out:
 
 ✅ Download the news picture and specify the file name in the excel file
 
+<<<<<<< HEAD
 ✅ Follow the steps 4-6 for all news that fall within the required time period
+=======
+✅ Follow the steps 4-6 for all news that fall within the required time period
+>>>>>>> refs/remotes/origin/master
