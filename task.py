@@ -148,16 +148,18 @@ def initCSV():
         print("Done")
 
 
-def storeToExcel(title, description):
+def storeToExcel(title, description, date, picture, phrase_count, money):
     '''Store the search results to an Excel file.'''
+    print("Storing to Excel", title, description,
+          date, picture, phrase_count, money)
     try:
         result = []
         result.append(title)
-        result.append("date")
+        result.append(date)
         result.append(description)
-        result.append("picture")
-        result.append(countNumberOfOccurence(title, description, searchTerm))
-        result.append(has_money("description"))
+        result.append(picture)
+        result.append(phrase_count)
+        result.append(money)
 
         with open('news.csv', 'a', newline='') as file:
             writer = csv.writer(file)
@@ -205,7 +207,8 @@ def getNews():
             # print(date, "Date")
 
             try:
-                storeToExcel(title, description)
+                storeToExcel(title, description, date, pathToImage,
+                             countNumberOfOccurence(title, description, searchTerm), has_money(description))
             except:
                 print("Error Trying to store to excel")
 
