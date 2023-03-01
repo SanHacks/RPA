@@ -1,5 +1,16 @@
-# Template: Robot FrameWork Implementation
 
+#  Robot FrameWork Implementation
+
+## Python Only
+
+As part of my Robot Framework Implementations You May Please Check Out:
+
+### My other Robot Scripting:https://github.com/SanHacks/RPA-Impelmentation
+(Salespersons Stats Submission,To Get started from a simple task template in `tasks.robot`)
+
+
+### My other Python Robot Framework Impementation: https://github.com/SanHacks/Robot-Framework-Implementation 
+( Get orders from Excel file and Auto fill all orders) `tasks.py`
 ##   This Script Acheives The Following 
 
 ✅ Open the site by following the link (Ideally we head straight to //www.nytimes.com/search)
