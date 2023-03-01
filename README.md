@@ -1,13 +1,19 @@
-# Template: Basic Python only robot
+# Template: Robot FrameWork Implementation
 
-Get started with just Python.
 
-This template robot:
-
-- Uses only Python.
-- Provides a simple template to start from (`task.py`).
-
-## Learning materials
-
-- [Python basics](https://robocorp.com/docs/languages-and-frameworks/python)
-- [Best practices in creating Python robots](https://robocorp.com/docs/development-guide/qa-and-best-practices/python-robots)
+#   This Script Acheives The Following 
+     [x] Open the site by following the link (Ideally we head straight to :https://www.nytimes.com/search)
+     [x] Enter a phrase in the search field
+  ##  [x] On the result page, apply the following filters:
+        [x] select a news category or section
+        [x] choose the latest news
+    [x] Get the values: title, date, and description.
+  ## [x] Store in an excel file:
+        [x] title
+        [x] date
+        [x] description (if available)
+        [x] picture filename
+        [x] count of search phrases in the title and description
+        [x] True or False, depending on whether the title or description contains any amount of money
+    [x] Download the news picture and specify the file name in the excel file
+    [x] Follow the steps 4-6 for all news that fall within the required time period
