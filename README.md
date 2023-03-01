@@ -33,9 +33,3 @@ As part of my Robot Framework Implementations You May Please Check Out:
 ✅ True or False, depending on whether the title or description contains any amount of money
 
 ✅ Download the news picture and specify the file name in the excel file
-
-<<<<<<< HEAD
-✅ Follow the steps 4-6 for all news that fall within the required time period
-=======
-✅ Follow the steps 4-6 for all news that fall within the required time period
->>>>>>> refs/remotes/origin/master
