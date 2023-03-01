@@ -13,7 +13,7 @@ from RPA.HTTP import HTTP
 from RPA.PDF import PDF
 import csv
 import re
-
+import urllib.request
 browser = webdriver.Chrome(
     # ChromeDriver executable in Mac (download from https://chromedriver.chromium.org/downloads)
     executable_path="/Users/mac/Downloads/chromedriver"
@@ -22,7 +22,7 @@ browser = webdriver.Chrome(
 )
 
 # Search
-searchTerm = "Technology"
+searchTerm = "African"
 
 
 def openNewYorkTimes():
@@ -100,8 +100,23 @@ def paparazzi():
         print("Done")
 
 
+def downloadImage(url, filename):
+    '''Download an image from a URL.'''
+    try:
+        print("Downloading image")
+        os.makedirs("newsImages", exist_ok=True)
+        theImage = "newsImages/" + filename
+        urllib.request.urlretrieve(url, theImage)
+
+    except Exception as e:
+        print("Error downloading image")
+    finally:
+        print("Image downloaded")
+    return theImage
+
+
 def numberOfNewsResult():
-    '''Get the number of search results. 
+    '''Get the number of search results.
     This function assumes that the search results page is already loaded.'''
     try:
         result_count_element = browser.find_element(By.XPATH,
@@ -155,33 +170,30 @@ def storeToExcel(title, description):
 
 
 def getNews():
-    '''Get the search results and store them to an Excel file.'''
+    ''' Get the search results and store them to an Excel file.Find the li element by its test ID,
+        Loop over each list element in the ol element,
+        Extract the title and description from the a element,
+        Find the image element, Extract the image URL, Download the image, Store the search results to an Excel file.
+    '''
     try:
-        # Find the li element by its test ID
         search_results = browser.find_element(
             By.XPATH, '//ol[@data-testid="search-results"]')
 
-        # Loop over each list element in the ol
         for result in search_results.find_elements(By.XPATH, './li[@data-testid="search-bodega-result"]'):
-            # Extract the title and description from the a element
             title = result.find_element(By.XPATH, './div//a/h4').text
             description = result.find_element(By.XPATH, './div//a/p[1]').text
-            # date = result.find_element(By.XPATH, './div//a/p[2]').text
+            date = result.find_element(
+                By.CSS_SELECTOR, 'span[data-testid="todays-date"]').text
             try:
-                # Find the image element
-                image_element = result.find_element(
-                    By.XPATH, './li//a/span/img')
+                image = result.find_element(By.CSS_SELECTOR, 'img[src]')
+                image_url = image.get_attribute('src')
+                print(image_url)
+                le = title.lower()
+                le = le.replace(" ", "")
+                filename = le + ".jpg"
+                pathToImage = downloadImage(image_url, filename)
+                print(pathToImage)
 
-                # Extract the image URL
-                image_url = image_element.get_attribute("src")
-
-                # Download the image
-                response = requests.get(image_url)
-                image_file = io.BytesIO(response.content)
-                image = Image.open(image_file).convert("RGB")
-
-                # Save the image to disk
-                image.save("images/" + title + ".jpg", "JPEG", quality=85)
             except NoSuchElementException:
                 print(NoSuchElementException)
             finally:
