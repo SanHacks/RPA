@@ -1,236 +1,84 @@
-"""Web Scraping Task."""
-import os
-
-from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import selenium
-from selenium.webdriver.support.ui import Select
-from RPA.Excel.Files import Files
 from RPA.HTTP import HTTP
-from RPA.PDF import PDF
-import csv
+from RPA.Browser.Selenium import Selenium
+from RPA.FileSystem import FileSystem
+from RPA.Excel.Files import Files
+from RPA.Tables import Tables
+from RPA.Browser.Selenium import By
+import os
 import re
-import urllib.request
-import logging
-from RPA.Robocorp.WorkItems import WorkItems
+import csv
 
-browser = webdriver.Chrome(
-    # ChromeDriver executable in Mac (download from https://chromedriver.chromium.org/downloads)
-    executable_path="/Users/mac/Downloads/chromedriver"
-    # windows in download folder
-    # executable_path="C:\\Users\\gundo\\Downloads\\chromedriver.exe"
-)
+browser = Selenium()
 
-# Search
-searchTerm = "World"
-
-
-def list_variables(item_id):
-    library = WorkItems()
-    library.get_input_work_item()
-    variables = library.get_work_item_variable()
-    for variable, value in variables.items():
-        logging.info("%s = %s", variable, value)
-        print(value)
-        return value
+searchTerm = "Artificial"
+url = "https://www.nytimes.com/search"
 
 
 def openNewYorkTimes():
-    '''Open the New York Times website.'''
     try:
-        browser.get(list_variables(2))  # usage of workitem
+        browser.open_available_browser(url)
         print("Page loaded")
-        # browser.find_element(By.XPATH, value="//button[normalize-space()='Accept All']").click() //In case of cookies
-    except selenium.common.exceptions.TimeoutException:
+    except Exception as e:
         print("Page load timeout")
-    except selenium.common.exceptions.NoSuchElementException:
+    except Exception as e:
         print("No such element as 'searchTextField'")
     finally:
         print("New York Times opened")
 
 
 def searchNews(searchPhrase):
-    '''Search for a phrase on the New York Times website.'''
     try:
         print("Searching for: " + searchPhrase)
-        browser.find_element(
-            By.ID, value="searchTextField").send_keys(searchPhrase)
-        browser.find_element(
-            By.XPATH, value="//button[normalize-space()='Search']").click()
-        # Handle some exceptions
-    except selenium.common.exceptions.TimeoutException:
+        browser.input_text("searchTextField", searchPhrase)
+        browser.click_button("Search")
+    except Exception as e:
         print("Page load timeout")
-    except selenium.common.exceptions.NoSuchElementException:
+    except Exception as e:
         print("No such element as 'searchTextField'")
     finally:
         print("Search Initiated")
 
 
 def searchFilterTime():
-    '''Filter the search results by time.'''
     try:
         print("Filtering results")
-        # Click button with text "Refine results via Date Range"
-        browser.find_element(
-            By.XPATH, value="//button[normalize-space()='Refine results via Date Range']").click()
-        # Click button with text "Past 24 hours"
-        browser.find_element(
-            # By.XPATH, value="//button[normalize-space()='Yesterday']").click()
-            By.XPATH, value="//button[normalize-space()='Past Week']").click()
-    except NoSuchElementException:
-        print("No such element as 'Refine results via Date Range' or 'Yesterday'")
+        browser.click_button("Refine results via Date Range")
+        browser.click_button("Past Week")
+    except Exception as e:
+        print("Page load timeout")
+    except Exception as e:
+        print("No such element as 'searchTextField'")
     finally:
-        print("Filtering done")
+        print("Search Initiated")
 
 
 def searchFilterSection():
-    '''Filter the search results by section.'''
     try:
         print("Filtering results")
-        # Click button with text "Refine results via Section"
-        browser.find_element(
-            By.XPATH, value="//button[normalize-space()='Refine results via Section']").click()
-        browser.find_element(
-            By.XPATH, value="//input[normalize-space()='Any']").click()
-    except NoSuchElementException:
-        print("No such element as 'Refine results via Section' or 'Any'")
+        browser.click_button("Refine results via Section")
+        browser.click_button("World")
+    except Exception as e:
+        print("Page load timeout")
+    except Exception as e:
+        print("No such element as 'searchTextField'")
     finally:
-        print("Filtering done")
+        print("Search Initiated")
 
 
 def paparazzi():
-    '''Take a screenshot of the search results page.'''
     try:
         print("Taking a screenshot")
-        os.makedirs("screenshot", exist_ok=True)
-        browser.save_screenshot("screenshots/screenshot.png")
-    except Exception as e:
-        print("Error")
-    finally:
-        print("Done")
-
-
-def downloadImage(url, filename):
-    '''Download an image from a URL.'''
-    try:
-        print("Downloading image")
-        os.makedirs("newsImages", exist_ok=True)
-        theImage = "newsImages/" + filename
-        urllib.request.urlretrieve(url, theImage)
-
-    except Exception as e:
-        print("Error downloading image")
-    finally:
-        print("Image downloaded")
-    return theImage
-
-
-def numberOfNewsResult():
-    '''Get the number of search results.
-    This function assumes that the search results page is already loaded.'''
-    try:
-        result_count_element = browser.find_element(By.XPATH,
-                                                    value="//p[@data-testid='SearchForm-status']")
-        result_count_text = result_count_element.text
-        result_count = int(result_count_text.split(" ")[1].replace(",", ""))
-        print("Search results:", result_count)
-    except NoSuchElementException:
-        print("No search results element found")
-    finally:
-        print("Done")
-
-
-def initCSV():
-    '''Create a CSV file to store the search results.'''
-    try:
-        if not os.path.isfile('news.csv'):
-            with open('news.csv', 'w', newline='') as file:
-                writer = csv.writer(file)
-                writer.writerow(["Title", "Date", "Description",
-                                "Picture filename", "Phrase count", "Money"])
-                print("CSV file created")
-        else:
-            print("CSV file already exists")
-    except Exception as e:
-        print(e)
-        print("Error in creating CSV file")
-    finally:
-        print("Done")
-
-
-def storeToExcel(title, description, date, picture, phrase_count, money):
-    '''Store the search results to an Excel file.'''
-    print("Storing to Excel", title, description,
-          date, picture, phrase_count, money)
-    try:
-        result = []
-        result.append(title)
-        result.append(date)
-        result.append(description)
-        result.append(picture)
-        result.append(phrase_count)
-        result.append(money)
-
-        with open('news.csv', 'a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(result)
-            print("Stored to CSV")
-    except:
-        print("Error in storing to CSV")
-    finally:
-        print("Done")
-
-
-def getNews():
-    ''' Get the search results and store them to an Excel file.Find the li element by its test ID,
-        Loop over each list element in the ol element,
-        Extract the title and description from the a element,
-        Find the image element, Extract the image URL, Download the image, Store the search results to an Excel file.
-    '''
-    try:
-        search_results = browser.find_element(
+        searchScreenShot = browser.find_element(
             By.XPATH, '//ol[@data-testid="search-results"]')
-
-        for result in search_results.find_elements(By.XPATH, './li[@data-testid="search-bodega-result"]'):
-            title = result.find_element(By.XPATH, './div//a/h4').text
-            description = result.find_element(By.XPATH, './div//a/p[1]').text
-            date = result.find_element(
-                By.CSS_SELECTOR, 'span[data-testid="todays-date"]').text
-            try:
-                image = result.find_element(By.CSS_SELECTOR, 'img[src]')
-                image_url = image.get_attribute('src')
-                print(image_url)
-                le = title.lower()
-                le = le.replace(" ", "")
-                filename = le + ".jpg"
-                pathToImage = downloadImage(image_url, filename)
-                print(pathToImage)
-
-            except NoSuchElementException:
-                print(NoSuchElementException)
-            finally:
-                print(
-                    "Warning::Could not find the suggested element in the page that is being read at the moment")
-
-            print(title, "Title")
-            print(description, "Description")
-            # print(date, "Date")
-
-            try:
-                storeToExcel(title, description, date, pathToImage,
-                             countNumberOfOccurence(title, description, searchTerm), has_money(description))
-            except:
-                print("Error Trying to store to excel")
-
-    except NoSuchElementException:
-        print("No search results element found")
-
+        browser.save_screenshot(
+            filename=f"{os.getcwd()}/output/sales_summary.png",
+            elemena=searchScreenShot)
+    except Exception as e:
+        print("Page load timeout")
+    except Exception as e:
+        print("No such element as 'searchTextField'")
     finally:
-        print("Completed getting news")
-        return
+        print("Screenshot taken")
 
 
 def countNumberOfOccurence(title, description, phrase):
@@ -278,19 +126,152 @@ def has_money(text):
     return False
 
 
-def nyCrawler():
-    ''' Main Runner Use work-item to get the search term from the user. '''
-    # initExcel()
-    initCSV()
-    openNewYorkTimes()
-    paparazzi()
-    searchNews(searchTerm)
-    searchFilterSection()
-    searchFilterTime()
-    getNews()
-    numberOfNewsResult()
+def downloadImage(url, filename):
+    ''' Downloads the image from the given url and saves it as the given filename. '''
+    try:
+        connector = HTTP()
+        theImage = "output/" + filename
+        connector.download(url, theImage, overwrite=True)
+        return theImage
+    except Exception as e:
+        print("Page load timeout")
+    except Exception as e:
+        print("No such element as 'searchTextField'")
+    finally:
+        print("Image downloaded and saved as " + theImage)
 
-    browser.quit()
+
+def loadWorkBook():
+    ''' Initializes the CSV file. '''
+    headers = ["Title", "Date", "Description",
+               "Picture filename", "Phrase count", "Money"]
+
+    try:
+        # Create CSV File And Write Table Headers
+        with open("output/news.csv", "w") as file:
+            file.write(",".join(headers) + "\n")
+            print("Created CSV file and wrote headers \n")
+    except Exception as e:
+        print(e)
+        print("Error in loading workbook")
+    finally:
+        print("Done loading workbook")
+
+
+def storeToExcel(title, description, date, picture, phrase_count, money):
+    '''Store the search results to an Excel file.'''
+    print("Storing to Excel", title, description,
+          date, picture, phrase_count, money)
+    try:
+        result = []
+        result.append(title)
+        result.append(date)
+        result.append(description)
+        result.append(picture)
+        result.append(phrase_count)
+        result.append(money)
+
+        with open('output/news.csv', 'a', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(result)
+            print("Stored to CSV")
+    except:
+        print("Error in storing to CSV")
+    finally:
+        print("Done")
+
+
+def getNews():
+    try:
+        print("Getting news")
+        news = browser.get_webelement("//ol[@data-testid='search-results']")
+        for newsResult in news.find_elements(By.XPATH, './li[@data-testid="search-bodega-result"]'):
+
+            title = newsResult.find_element(By.XPATH, './div//a/h4').text
+
+            description = newsResult.find_element(
+                By.XPATH, './div//a/p[1]').text
+            date = newsResult.find_element(
+                By.CSS_SELECTOR, 'span[data-testid="todays-date"]').text
+            try:
+                image = newsResult.find_element(By.CSS_SELECTOR, 'img[src]')
+                image_url = image.get_attribute('src')
+                le = title.lower()
+                le = re.sub(r'[^\w\s]', '', le)
+                le = re.sub(r'\s+', '-', le)
+
+                fileLocation = le + ".jpg"
+                pathToImage = downloadImage(image_url, fileLocation)
+            except Exception as e:
+                print(e)
+            finally:
+                print("Done with image \n")
+
+            try:
+
+                storeToExcel(title, description, date, pathToImage,
+                             countNumberOfOccurence(title, description, searchTerm), has_money(description))
+
+            except Exception as e:
+                print(e)
+
+    except Exception as e:
+        print(e)
+        print("Error in getting news \n")
+    finally:
+        print("Done with news \n")
+
+
+def numberOfNewsResult():
+    try:
+
+        print("Getting number of news results")
+        totalNewsResult = browser.get_webelement(
+            "//p[@data-testid='SearchForm-status']")
+
+        # print("Total number of news results: " + totalNewsResult.text)
+        result_count_text = totalNewsResult.text
+        result_count = int(result_count_text.split(" ")[1].replace(",", ""))
+        print("Search results:", result_count)
+
+    except Exception as e:
+        print(e)
+        print("Error in getting number of news results \n")
+    finally:
+        print("Done with number of news results")
+
+
+def cleanUp():
+    ''' Deletes the image files. '''
+    try:
+        print("Cleaning up")
+        for file in os.listdir("output"):
+            if file.endswith(".jpg"):
+                os.remove(os.path.join("output", file))
+    except Exception as e:
+        print(e)
+        print("Error in cleaning up")
+    finally:
+        print("Done cleaning up")
+
+
+def nyCrawler():
+    try:
+        loadWorkBook()
+        openNewYorkTimes()
+        searchNews(searchTerm)
+        searchFilterSection()
+        searchFilterTime()
+        getNews()
+        # paparazzi()
+        # numberOfNewsResult()
+        # cleanUp()
+    except Exception as e:
+        print(e)
+        print("Error in NY Crawler")
+    finally:
+        browser.close_browser()
+        print("Browser closed")
 
 
 if __name__ == "__main__":
